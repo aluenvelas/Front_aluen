@@ -294,7 +294,7 @@ const Ventas = () => {
       {/* Filtros */}
       <Card className="mb-4">
         <Card.Body>
-          <Row>
+          <Row className="mb-3">
             <Col md={3}>
               <Form.Group>
                 <Form.Label>Estado</Form.Label>
@@ -325,6 +325,35 @@ const Ventas = () => {
             </Col>
             <Col md={3}>
               <Form.Group>
+                <Form.Label>📍 Punto de Venta</Form.Label>
+                <Form.Select 
+                  value={filtros.puntoVenta || ''}
+                  onChange={(e) => setFiltros({...filtros, puntoVenta: e.target.value})}
+                >
+                  <option value="">Todos</option>
+                  {puntosVenta.map(punto => (
+                    <option key={punto._id} value={punto._id}>
+                      {punto.nombre}
+                    </option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
+            </Col>
+            <Col md={3}>
+              <Form.Group>
+                <Form.Label>Buscar Cliente</Form.Label>
+                <Form.Control
+                  type="text"
+                  placeholder="Nombre o email..."
+                  value={filtros.cliente || ''}
+                  onChange={(e) => setFiltros({...filtros, cliente: e.target.value})}
+                />
+              </Form.Group>
+            </Col>
+          </Row>
+          <Row>
+            <Col md={3}>
+              <Form.Group>
                 <Form.Label>Fecha Inicio</Form.Label>
                 <Form.Control
                   type="date"
@@ -343,6 +372,15 @@ const Ventas = () => {
                 />
               </Form.Group>
             </Col>
+            <Col md={6} className="d-flex align-items-end">
+              <Button 
+                variant="outline-secondary"
+                onClick={() => setFiltros({})}
+                className="w-100"
+              >
+                🔄 Limpiar Filtros
+              </Button>
+            </Col>
           </Row>
         </Card.Body>
       </Card>
@@ -356,6 +394,7 @@ const Ventas = () => {
                 <th>#</th>
                 <th>Fecha</th>
                 <th>Cliente</th>
+                <th>Punto de Venta</th>
                 <th>Productos</th>
                 <th>Total</th>
                 <th>Método Pago</th>
@@ -366,7 +405,7 @@ const Ventas = () => {
             <tbody>
               {ventas.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="text-center text-muted">
+                  <td colSpan="9" className="text-center text-muted">
                     No hay ventas registradas
                   </td>
                 </tr>
@@ -378,6 +417,13 @@ const Ventas = () => {
                     <td>
                       <strong>{venta.cliente.nombre}</strong>
                       {venta.cliente.email && <div><small className="text-muted">{venta.cliente.email}</small></div>}
+                    </td>
+                    <td>
+                      {venta.puntoVentaNombre ? (
+                        <span>📍 {venta.puntoVentaNombre}</span>
+                      ) : (
+                        <span className="text-muted">Sin especificar</span>
+                      )}
                     </td>
                     <td>{venta.items.length} item(s)</td>
                     <td><strong>${venta.total.toFixed(2)}</strong></td>
