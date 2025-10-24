@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { ventasAPI, recetasAPI, inventarioAPI } from '../services/api';
+import { ventasAPI, inventarioAPI } from '../services/api';
 import { Container, Row, Col, Card, Button, Alert, Form, Modal, Table, Badge } from 'react-bootstrap';
 
 const Ventas = () => {
   const [ventas, setVentas] = useState([]);
-  const [recetas, setRecetas] = useState([]);
   const [inventario, setInventario] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -46,18 +45,16 @@ const Ventas = () => {
   const cargarDatos = async () => {
     try {
       setLoading(true);
-      const [ventasRes, recetasRes, inventarioRes] = await Promise.all([
+      const [ventasRes, inventarioRes] = await Promise.all([
         ventasAPI.getAll(filtros),
-        recetasAPI.getAll({ activo: 'true' }),
-        inventarioAPI.getAll()  // Sin filtro activo para obtener todo el inventario
+        inventarioAPI.getAll()  // Cargar inventario con recetas populadas
       ]);
       
       setVentas(ventasRes.data.ventas || ventasRes.data);
-      setRecetas(recetasRes.data);
       setInventario(inventarioRes.data);
       
       console.log('📦 Inventario cargado:', inventarioRes.data.length, 'items');
-      console.log('🧪 Recetas cargadas:', recetasRes.data.length, 'items');
+      console.log('✅ Solo mostrando productos con inventario disponible');
       
       setError('');
     } catch (err) {
@@ -74,50 +71,44 @@ const Ventas = () => {
       return;
     }
 
-    const recetaSeleccionada = recetas.find(r => r._id === nuevoItem.receta);
-    
     console.log('🔍 Buscando inventario para receta:', nuevoItem.receta);
     console.log('📦 Items de inventario disponibles:', inventario.length);
     
-    // Verificar stock disponible - buscar por receta._id o por nombreVela
-    let itemInventario = inventario.find(inv => {
-      const match = inv.receta?._id === nuevoItem.receta || 
-                    inv.receta === nuevoItem.receta ||
-                    inv.nombreVela === recetaSeleccionada?.nombre;
-      if (match) {
-        console.log('✅ Inventario encontrado:', {
-          nombreVela: inv.nombreVela,
-          stockActual: inv.stockActual,
-          recetaId: inv.receta?._id || inv.receta
-        });
-      }
-      return match;
-    });
+    // Buscar el item en el inventario
+    let itemInventario = inventario.find(inv => inv.receta?._id === nuevoItem.receta);
     
-    if (itemInventario) {
-      console.log('📊 Stock disponible:', itemInventario.stockActual, 'unidades');
-      if (itemInventario.stockActual < nuevoItem.cantidad) {
-        alert(`Stock insuficiente. Disponible: ${itemInventario.stockActual} unidades`);
-        return;
-      }
-    } else {
+    if (!itemInventario) {
       console.error('❌ No se encontró inventario para:', {
         recetaId: nuevoItem.receta,
-        nombreReceta: recetaSeleccionada?.nombre,
         inventarioDisponible: inventario.map(inv => ({
           nombreVela: inv.nombreVela,
           recetaId: inv.receta?._id || inv.receta,
           stock: inv.stockActual
         }))
       });
-      alert(`Producto sin inventario disponible.\n\nReceta: ${recetaSeleccionada?.nombre}\nCódigo: ${recetaSeleccionada?.codigo || 'N/A'}\n\nVerifica que hayas producido esta vela en el módulo de Recetas.`);
+      alert(`Producto sin inventario disponible.\n\nVerifica que hayas producido esta vela en el módulo de Recetas.`);
       return;
     }
+    
+    console.log('✅ Inventario encontrado:', {
+      nombreVela: itemInventario.nombreVela,
+      stockActual: itemInventario.stockActual,
+      recetaId: itemInventario.receta?._id
+    });
+    
+    // Verificar stock disponible
+    console.log('📊 Stock disponible:', itemInventario.stockActual, 'unidades');
+    if (itemInventario.stockActual < nuevoItem.cantidad) {
+      alert(`Stock insuficiente. Disponible: ${itemInventario.stockActual} unidades`);
+      return;
+    }
+    
+    const recetaSeleccionada = itemInventario.receta;
     
     // Preparar item sin campos vacíos
     const itemToAdd = {
       receta: nuevoItem.receta,
-      recetaNombre: recetaSeleccionada?.nombre,
+      recetaNombre: itemInventario.nombreVela,
       cantidad: nuevoItem.cantidad,
       precioUnitario: nuevoItem.precioUnitario,
       descripcion: nuevoItem.descripcion || ''
@@ -475,13 +466,13 @@ const Ventas = () => {
                     value={nuevoItem.receta}
                     onChange={(e) => {
                       const recetaId = e.target.value;
-                      const recetaSeleccionada = recetas.find(r => r._id === recetaId);
-                      if (recetaSeleccionada) {
+                      const itemInventarioSel = inventario.find(inv => inv.receta?._id === recetaId);
+                      if (itemInventarioSel && itemInventarioSel.receta) {
                         setNuevoItem({
                           ...nuevoItem,
                           receta: recetaId,
-                          searchTerm: `${recetaSeleccionada.codigo ? recetaSeleccionada.codigo + ' - ' : ''}${recetaSeleccionada.nombre}`,
-                          precioUnitario: recetaSeleccionada.precioVentaSugerido || 0,
+                          searchTerm: `${itemInventarioSel.receta.codigo ? itemInventarioSel.receta.codigo + ' - ' : ''}${itemInventarioSel.nombreVela}`,
+                          precioUnitario: itemInventarioSel.receta.precioVentaSugerido || 0,
                           showSearchResults: false
                         });
                       } else {
@@ -495,35 +486,24 @@ const Ventas = () => {
                     }}
                   >
                     <option value="">-- Seleccione un producto --</option>
-                    {recetas.map(r => {
-                      // Buscar inventario por múltiples criterios
-                      const itemInventario = inventario.find(inv => 
-                        inv.receta?._id === r._id || 
-                        inv.receta === r._id ||
-                        inv.nombreVela === r.nombre
-                      );
-                      const stockDisponible = itemInventario ? itemInventario.stockActual : 0;
-                      const sinStock = stockDisponible === 0;
-                      
-                      return (
-                        <option 
-                          key={r._id} 
-                          value={r._id}
-                          disabled={sinStock}
-                          style={{ color: sinStock ? '#999' : 'inherit' }}
-                        >
-                          {r.codigo ? `${r.codigo} - ` : ''}{r.nombre} | Stock: {stockDisponible} | ${r.precioVentaSugerido ? r.precioVentaSugerido.toFixed(2) : 'N/A'}
-                        </option>
-                      );
-                    })}
+                    {inventario
+                      .filter(item => item.stockActual > 0) // Solo mostrar items con stock
+                      .map(item => {
+                        const receta = item.receta;
+                        if (!receta) return null;
+                        
+                        return (
+                          <option 
+                            key={item._id} 
+                            value={receta._id}
+                          >
+                            {receta.codigo ? `${receta.codigo} - ` : ''}{item.nombreVela} | Stock: {item.stockActual} | ${receta.precioVentaSugerido ? receta.precioVentaSugerido.toFixed(2) : 'N/A'}
+                          </option>
+                        );
+                      })}
                   </Form.Select>
                   {nuevoItem.receta && (() => {
-                    const recetaSel = recetas.find(r => r._id === nuevoItem.receta);
-                    const itemInv = inventario.find(inv => 
-                      inv.receta?._id === nuevoItem.receta || 
-                      inv.receta === nuevoItem.receta ||
-                      inv.nombreVela === recetaSel?.nombre
-                    );
+                    const itemInv = inventario.find(inv => inv.receta?._id === nuevoItem.receta);
                     return itemInv && (
                       <Form.Text className="text-success">
                         ✓ Stock disponible: {itemInv.stockActual} unidades
@@ -562,67 +542,57 @@ const Ventas = () => {
                         boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
                       }}
                     >
-                      {recetas.filter(r => {
+                      {inventario.filter(item => {
+                        if (!item.receta || item.stockActual === 0) return false; // Solo items con stock
                         const term = nuevoItem.searchTerm.toLowerCase();
-                        return r.nombre.toLowerCase().includes(term) || 
-                               (r.codigo && r.codigo.toLowerCase().includes(term));
+                        return item.nombreVela.toLowerCase().includes(term) || 
+                               (item.receta.codigo && item.receta.codigo.toLowerCase().includes(term));
                       }).length === 0 ? (
                         <div className="p-3 text-center text-muted">
-                          No se encontraron productos
+                          No se encontraron productos con stock disponible
                         </div>
                       ) : (
-                        recetas.filter(r => {
+                        inventario.filter(item => {
+                          if (!item.receta || item.stockActual === 0) return false;
                           const term = nuevoItem.searchTerm.toLowerCase();
-                          return r.nombre.toLowerCase().includes(term) || 
-                                 (r.codigo && r.codigo.toLowerCase().includes(term));
-                        }).map(r => {
-                          // Buscar stock disponible por múltiples criterios
-                          const itemInventario = inventario.find(inv => 
-                            inv.receta?._id === r._id || 
-                            inv.receta === r._id ||
-                            inv.nombreVela === r.nombre
-                          );
-                          const stockDisponible = itemInventario ? itemInventario.stockActual : 0;
-                          const sinStock = stockDisponible === 0;
+                          return item.nombreVela.toLowerCase().includes(term) || 
+                                 (item.receta.codigo && item.receta.codigo.toLowerCase().includes(term));
+                        }).map(item => {
+                          const receta = item.receta;
                           
                           return (
                             <div
-                              key={r._id}
+                              key={item._id}
                               style={{
                                 padding: '10px',
-                                cursor: sinStock ? 'not-allowed' : 'pointer',
+                                cursor: 'pointer',
                                 borderBottom: '1px solid #f0f0f0',
-                                backgroundColor: nuevoItem.receta === r._id ? '#f0f0f0' : 'white',
-                                opacity: sinStock ? 0.5 : 1
+                                backgroundColor: nuevoItem.receta === receta._id ? '#f0f0f0' : 'white'
                               }}
-                              onMouseEnter={(e) => !sinStock && (e.target.style.backgroundColor = '#f8f9fa')}
-                              onMouseLeave={(e) => !sinStock && (e.target.style.backgroundColor = nuevoItem.receta === r._id ? '#f0f0f0' : 'white')}
+                              onMouseEnter={(e) => (e.target.style.backgroundColor = '#f8f9fa')}
+                              onMouseLeave={(e) => (e.target.style.backgroundColor = nuevoItem.receta === receta._id ? '#f0f0f0' : 'white')}
                               onClick={() => {
-                                if (sinStock) {
-                                  alert('Producto sin stock disponible');
-                                  return;
-                                }
                                 setNuevoItem({
                                   ...nuevoItem,
-                                  receta: r._id,
-                                  searchTerm: `${r.codigo ? r.codigo + ' - ' : ''}${r.nombre}`,
-                                  precioUnitario: r.precioVentaSugerido || 0,
+                                  receta: receta._id,
+                                  searchTerm: `${receta.codigo ? receta.codigo + ' - ' : ''}${item.nombreVela}`,
+                                  precioUnitario: receta.precioVentaSugerido || 0,
                                   showSearchResults: false
                                 });
                               }}
                             >
                               <div className="d-flex justify-content-between align-items-center">
                                 <div>
-                                  <strong>{r.codigo ? `${r.codigo} - ` : ''}{r.nombre}</strong>
+                                  <strong>{receta.codigo ? `${receta.codigo} - ` : ''}{item.nombreVela}</strong>
                                   <div>
-                                    <small className={sinStock ? 'text-danger' : 'text-success'}>
-                                      {sinStock ? '❌ Sin stock' : `✅ Stock: ${stockDisponible} unidades`}
+                                    <small className="text-success">
+                                      ✅ Stock: {item.stockActual} unidades
                                     </small>
                                   </div>
                                 </div>
-                                {r.precioVentaSugerido && (
+                                {receta.precioVentaSugerido && (
                                   <span className="text-success">
-                                    ${r.precioVentaSugerido.toFixed(2)}
+                                    ${receta.precioVentaSugerido.toFixed(2)}
                                   </span>
                                 )}
                               </div>
