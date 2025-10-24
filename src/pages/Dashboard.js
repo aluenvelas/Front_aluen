@@ -186,17 +186,15 @@ const Dashboard = () => {
                   {/* Imagen del Frasco */}
                   <div style={{ 
                     height: '250px',
-                    backgroundColor: '#ffffff',
-                    backgroundImage: 'linear-gradient(45deg, #f0f0f0 25%, transparent 25%), linear-gradient(-45deg, #f0f0f0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f0f0f0 75%), linear-gradient(-45deg, transparent 75%, #f0f0f0 75%)',
-                    backgroundSize: '20px 20px',
-                    backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px',
+                    background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     borderTopLeftRadius: '0.75rem',
                     borderTopRightRadius: '0.75rem',
                     position: 'relative',
-                    padding: '10px'
+                    padding: '15px',
+                    borderBottom: '1px solid #dee2e6'
                   }}>
                     {imageUrl ? (
                       <img 
