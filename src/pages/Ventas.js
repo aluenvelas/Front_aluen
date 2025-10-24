@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { ventasAPI, inventarioAPI } from '../services/api';
+import { ventasAPI, inventarioAPI, puntosVentaAPI } from '../services/api';
 import { Container, Row, Col, Card, Button, Alert, Form, Modal, Table, Badge } from 'react-bootstrap';
 
 const Ventas = () => {
   const [ventas, setVentas] = useState([]);
   const [inventario, setInventario] = useState([]);
+  const [puntosVenta, setPuntosVenta] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -20,6 +21,7 @@ const Ventas = () => {
       telefono: '',
       direccion: ''
     },
+    puntoVenta: '',
     items: [],
     descuento: 0,
     impuestos: 0,
@@ -45,15 +47,18 @@ const Ventas = () => {
   const cargarDatos = async () => {
     try {
       setLoading(true);
-      const [ventasRes, inventarioRes] = await Promise.all([
+      const [ventasRes, inventarioRes, puntosVentaRes] = await Promise.all([
         ventasAPI.getAll(filtros),
-        inventarioAPI.getAll()  // Cargar inventario con recetas populadas
+        inventarioAPI.getAll(),  // Cargar inventario con recetas populadas
+        puntosVentaAPI.getAll({ activo: 'true' })  // Cargar puntos de venta activos
       ]);
       
       setVentas(ventasRes.data.ventas || ventasRes.data);
       setInventario(inventarioRes.data);
+      setPuntosVenta(puntosVentaRes.data || []);
       
       console.log('📦 Inventario cargado:', inventarioRes.data.length, 'items totales');
+      console.log('📍 Puntos de venta cargados:', puntosVentaRes.data?.length || 0);
       
       // Debug: Mostrar detalles del inventario
       const itemsConStock = inventarioRes.data.filter(item => item.stockActual > 0);
@@ -208,6 +213,7 @@ const Ventas = () => {
   const resetForm = () => {
     setFormData({
       cliente: { nombre: '', email: '', telefono: '', direccion: '' },
+      puntoVenta: '',
       items: [],
       descuento: 0,
       impuestos: 0,
@@ -469,6 +475,28 @@ const Ventas = () => {
                       cliente: {...formData.cliente, direccion: e.target.value}
                     })}
                   />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>📍 Punto de Venta</Form.Label>
+                  <Form.Select
+                    value={formData.puntoVenta}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      puntoVenta: e.target.value
+                    })}
+                  >
+                    <option value="">-- Seleccione un punto de venta --</option>
+                    {puntosVenta.map(punto => (
+                      <option key={punto._id} value={punto._id}>
+                        {punto.nombre}
+                      </option>
+                    ))}
+                  </Form.Select>
+                  <Form.Text className="text-muted">
+                    Opcional. Selecciona el punto de venta donde se realiza la transacción.
+                  </Form.Text>
                 </Form.Group>
               </Col>
             </Row>

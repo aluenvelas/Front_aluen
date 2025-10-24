@@ -15,6 +15,7 @@ const Sidebar = ({ isOpen, onClose }) => {
     { path: '/frascos', icon: '🫙', label: 'Frascos', roles: ['admin'] },
     { path: '/nombres-velas', icon: '🕯️', label: 'Nombres de Velas', roles: ['admin'] },
     { path: '/activos', icon: '🏭', label: 'Activos', roles: ['admin'] },
+    { path: '/puntos-venta', icon: '📍', label: 'Puntos de Venta', roles: ['admin'] },
     { path: '/reportes', icon: '📈', label: 'Reportes', roles: ['admin'] },
     { path: '/usuarios', icon: '👥', label: 'Usuarios', roles: ['admin'] }
   ];

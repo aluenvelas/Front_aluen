@@ -16,6 +16,7 @@ import Reportes from './pages/Reportes';
 import NombresVelas from './pages/NombresVelas';
 import Usuarios from './pages/Usuarios';
 import Inventario from './pages/Inventario';
+import PuntosVenta from './pages/PuntosVenta';
 
 // Componente para redirigir si ya está autenticado
 const RedirectIfAuthenticated = ({ children }) => {
@@ -107,6 +108,14 @@ function AppContent() {
                       element={
                         <RutaProtegidaRol rolesPermitidos={['admin']}>
                           <Activos />
+                        </RutaProtegidaRol>
+                      } 
+                    />
+                    <Route 
+                      path="/puntos-venta" 
+                      element={
+                        <RutaProtegidaRol rolesPermitidos={['admin']}>
+                          <PuntosVenta />
                         </RutaProtegidaRol>
                       } 
                     />

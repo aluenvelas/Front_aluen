@@ -130,5 +130,14 @@ export const inventarioAPI = {
   getBajoStock: () => api.get('/inventario/alerta/bajo-stock'),
 };
 
+// Puntos de Venta
+export const puntosVentaAPI = {
+  getAll: (params = {}) => api.get('/puntos-venta', { params }),
+  getById: (id) => api.get(`/puntos-venta/${id}`),
+  create: (data) => api.post('/puntos-venta', data),
+  update: (id, data) => api.put(`/puntos-venta/${id}`, data),
+  delete: (id) => api.delete(`/puntos-venta/${id}`),
+};
+
 export default api;
 
