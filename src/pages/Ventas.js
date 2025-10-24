@@ -49,16 +49,20 @@ const Ventas = () => {
       const [ventasRes, recetasRes, inventarioRes] = await Promise.all([
         ventasAPI.getAll(filtros),
         recetasAPI.getAll({ activo: 'true' }),
-        inventarioAPI.getAll({ activo: true })
+        inventarioAPI.getAll()  // Sin filtro activo para obtener todo el inventario
       ]);
       
       setVentas(ventasRes.data.ventas || ventasRes.data);
       setRecetas(recetasRes.data);
       setInventario(inventarioRes.data);
+      
+      console.log('📦 Inventario cargado:', inventarioRes.data.length, 'items');
+      console.log('🧪 Recetas cargadas:', recetasRes.data.length, 'items');
+      
       setError('');
     } catch (err) {
       setError('Error al cargar los datos');
-      console.error(err);
+      console.error('Error cargando datos:', err);
     } finally {
       setLoading(false);
     }
@@ -72,15 +76,41 @@ const Ventas = () => {
 
     const recetaSeleccionada = recetas.find(r => r._id === nuevoItem.receta);
     
-    // Verificar stock disponible
-    const itemInventario = inventario.find(inv => inv.receta?._id === nuevoItem.receta);
+    console.log('🔍 Buscando inventario para receta:', nuevoItem.receta);
+    console.log('📦 Items de inventario disponibles:', inventario.length);
+    
+    // Verificar stock disponible - buscar por receta._id o por nombreVela
+    let itemInventario = inventario.find(inv => {
+      const match = inv.receta?._id === nuevoItem.receta || 
+                    inv.receta === nuevoItem.receta ||
+                    inv.nombreVela === recetaSeleccionada?.nombre;
+      if (match) {
+        console.log('✅ Inventario encontrado:', {
+          nombreVela: inv.nombreVela,
+          stockActual: inv.stockActual,
+          recetaId: inv.receta?._id || inv.receta
+        });
+      }
+      return match;
+    });
+    
     if (itemInventario) {
+      console.log('📊 Stock disponible:', itemInventario.stockActual, 'unidades');
       if (itemInventario.stockActual < nuevoItem.cantidad) {
         alert(`Stock insuficiente. Disponible: ${itemInventario.stockActual} unidades`);
         return;
       }
     } else {
-      alert('Producto sin inventario disponible');
+      console.error('❌ No se encontró inventario para:', {
+        recetaId: nuevoItem.receta,
+        nombreReceta: recetaSeleccionada?.nombre,
+        inventarioDisponible: inventario.map(inv => ({
+          nombreVela: inv.nombreVela,
+          recetaId: inv.receta?._id || inv.receta,
+          stock: inv.stockActual
+        }))
+      });
+      alert(`Producto sin inventario disponible.\n\nReceta: ${recetaSeleccionada?.nombre}\nCódigo: ${recetaSeleccionada?.codigo || 'N/A'}\n\nVerifica que hayas producido esta vela en el módulo de Recetas.`);
       return;
     }
     
@@ -466,7 +496,12 @@ const Ventas = () => {
                   >
                     <option value="">-- Seleccione un producto --</option>
                     {recetas.map(r => {
-                      const itemInventario = inventario.find(inv => inv.receta?._id === r._id);
+                      // Buscar inventario por múltiples criterios
+                      const itemInventario = inventario.find(inv => 
+                        inv.receta?._id === r._id || 
+                        inv.receta === r._id ||
+                        inv.nombreVela === r.nombre
+                      );
                       const stockDisponible = itemInventario ? itemInventario.stockActual : 0;
                       const sinStock = stockDisponible === 0;
                       
@@ -482,11 +517,19 @@ const Ventas = () => {
                       );
                     })}
                   </Form.Select>
-                  {nuevoItem.receta && inventario.find(inv => inv.receta?._id === nuevoItem.receta) && (
-                    <Form.Text className="text-success">
-                      ✓ Stock disponible: {inventario.find(inv => inv.receta?._id === nuevoItem.receta)?.stockActual} unidades
-                    </Form.Text>
-                  )}
+                  {nuevoItem.receta && (() => {
+                    const recetaSel = recetas.find(r => r._id === nuevoItem.receta);
+                    const itemInv = inventario.find(inv => 
+                      inv.receta?._id === nuevoItem.receta || 
+                      inv.receta === nuevoItem.receta ||
+                      inv.nombreVela === recetaSel?.nombre
+                    );
+                    return itemInv && (
+                      <Form.Text className="text-success">
+                        ✓ Stock disponible: {itemInv.stockActual} unidades
+                      </Form.Text>
+                    );
+                  })()}
                 </Form.Group>
               </Col>
               <Col md={6}>
@@ -533,8 +576,12 @@ const Ventas = () => {
                           return r.nombre.toLowerCase().includes(term) || 
                                  (r.codigo && r.codigo.toLowerCase().includes(term));
                         }).map(r => {
-                          // Buscar stock disponible
-                          const itemInventario = inventario.find(inv => inv.receta?._id === r._id);
+                          // Buscar stock disponible por múltiples criterios
+                          const itemInventario = inventario.find(inv => 
+                            inv.receta?._id === r._id || 
+                            inv.receta === r._id ||
+                            inv.nombreVela === r.nombre
+                          );
                           const stockDisponible = itemInventario ? itemInventario.stockActual : 0;
                           const sinStock = stockDisponible === 0;
                           

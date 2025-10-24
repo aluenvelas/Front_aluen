@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { activosAPI } from '../services/api';
 import GenericForm from '../components/GenericForm';
 import GenericTable from '../components/GenericTable';
+import SearchBar from '../components/SearchBar';
 
 const Activos = () => {
   const [items, setItems] = useState([]);
@@ -9,6 +10,7 @@ const Activos = () => {
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const formFields = [
     { name: 'nombre', label: 'Nombre', type: 'text', required: true },
@@ -135,6 +137,22 @@ const Activos = () => {
     setEditingItem(null);
   };
 
+  // Filtrar activos por búsqueda
+  const filterItems = (items, searchTerm) => {
+    if (!searchTerm) return items;
+    
+    const term = searchTerm.toLowerCase();
+    return items.filter(item => 
+      item.nombre?.toLowerCase().includes(term) ||
+      item.tipo?.toLowerCase().includes(term) ||
+      item.estado?.toLowerCase().includes(term) ||
+      item.ubicacion?.toLowerCase().includes(term) ||
+      item.proveedor?.toLowerCase().includes(term)
+    );
+  };
+
+  const itemsFiltrados = filterItems(items, searchTerm);
+
   if (loading) {
     return (
       <div className="loading">
@@ -163,8 +181,15 @@ const Activos = () => {
         </div>
       )}
 
+      {/* Buscador */}
+      <SearchBar
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        placeholder="Buscar por nombre, tipo, estado, ubicación o proveedor..."
+      />
+
       <GenericTable 
-        items={items}
+        items={itemsFiltrados}
         columns={tableColumns}
         onEdit={handleEdit}
         onDelete={handleDelete}

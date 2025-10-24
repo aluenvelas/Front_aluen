@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { materialesAPI } from '../services/api';
 import MaterialForm from '../components/MaterialForm';
 import MaterialTable from '../components/MaterialTable';
+import SearchBar from '../components/SearchBar';
 
 const Materiales = () => {
   const [materiales, setMateriales] = useState([]);
@@ -9,6 +10,7 @@ const Materiales = () => {
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const [filtros, setFiltros] = useState({
     tipo: '',
     activo: 'true'
@@ -78,6 +80,20 @@ const Materiales = () => {
 
   const tiposMaterial = ['cera', 'aditivo', 'esencia', 'otro'];
 
+  // Filtrar materiales por búsqueda
+  const filterMateriales = (materiales, searchTerm) => {
+    if (!searchTerm) return materiales;
+    
+    const term = searchTerm.toLowerCase();
+    return materiales.filter(material => 
+      material.nombre?.toLowerCase().includes(term) ||
+      material.tipo?.toLowerCase().includes(term) ||
+      material.proveedor?.toLowerCase().includes(term)
+    );
+  };
+
+  const materialesFiltrados = filterMateriales(materiales, searchTerm);
+
   if (loading) {
     return (
       <div className="loading">
@@ -105,6 +121,13 @@ const Materiales = () => {
           {error}
         </div>
       )}
+
+      {/* Buscador */}
+      <SearchBar
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        placeholder="Buscar por nombre, tipo o proveedor..."
+      />
 
       {/* Filtros */}
       <div className="card mb-4">
@@ -140,7 +163,10 @@ const Materiales = () => {
             <div className="col-md-4 d-flex align-items-end">
               <button 
                 className="btn btn-outline-secondary"
-                onClick={() => setFiltros({tipo: '', activo: 'true'})}
+                onClick={() => {
+                  setFiltros({tipo: '', activo: 'true'});
+                  setSearchTerm('');
+                }}
               >
                 🔄 Limpiar Filtros
               </button>
@@ -151,7 +177,7 @@ const Materiales = () => {
 
       {/* Tabla de Materiales */}
       <MaterialTable 
-        materiales={materiales}
+        materiales={materialesFiltrados}
         onEdit={handleEdit}
         onDelete={handleDelete}
       />
