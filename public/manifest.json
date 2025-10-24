@@ -1,0 +1,17 @@
+{
+  "short_name": "ALUEN",
+  "name": "ALUEN - Velas Artesanales",
+  "description": "Sistema de gestión para velas artesanales",
+  "icons": [
+    {
+      "src": "logo-aluen.svg",
+      "type": "image/svg+xml",
+      "sizes": "any"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#1a1a1a",
+  "background_color": "#ffffff"
+}
+
