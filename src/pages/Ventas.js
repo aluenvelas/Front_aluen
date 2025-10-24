@@ -127,8 +127,6 @@ const Ventas = () => {
       return;
     }
     
-    const recetaSeleccionada = itemInventario.receta;
-    
     // Preparar item sin campos vacíos
     const itemToAdd = {
       receta: nuevoItem.receta,
