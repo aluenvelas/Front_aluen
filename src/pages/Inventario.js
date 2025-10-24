@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Table, Badge, Alert, Spinner, Button, Form } from 'react-bootstrap';
+import { Container, Row, Col, Card, Table, Badge, Alert, Spinner, Button, Form, Modal } from 'react-bootstrap';
 import { inventarioAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import SearchBar from '../components/SearchBar';
@@ -11,6 +11,13 @@ const Inventario = () => {
   const [error, setError] = useState(null);
   const [editingStockMinimo, setEditingStockMinimo] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showAjusteModal, setShowAjusteModal] = useState(false);
+  const [itemAjuste, setItemAjuste] = useState(null);
+  const [ajusteData, setAjusteData] = useState({
+    tipo: 'absoluto', // 'absoluto' o 'relativo'
+    valor: 0,
+    motivo: ''
+  });
 
   useEffect(() => {
     fetchInventario();
@@ -38,6 +45,52 @@ const Inventario = () => {
     } catch (err) {
       console.error('Error al actualizar stock mínimo:', err);
       alert('Error al actualizar el stock mínimo');
+    }
+  };
+
+  const handleOpenAjusteModal = (item) => {
+    setItemAjuste(item);
+    setAjusteData({
+      tipo: 'absoluto',
+      valor: item.stockActual,
+      motivo: ''
+    });
+    setShowAjusteModal(true);
+  };
+
+  const handleCloseAjusteModal = () => {
+    setShowAjusteModal(false);
+    setItemAjuste(null);
+    setAjusteData({
+      tipo: 'absoluto',
+      valor: 0,
+      motivo: ''
+    });
+  };
+
+  const handleAjustarStock = async () => {
+    if (!itemAjuste) return;
+
+    try {
+      const payload = {
+        motivo: ajusteData.motivo || 'Ajuste manual de inventario'
+      };
+
+      if (ajusteData.tipo === 'absoluto') {
+        payload.stockActual = parseInt(ajusteData.valor);
+      } else {
+        payload.ajuste = parseInt(ajusteData.valor);
+      }
+
+      const response = await inventarioAPI.update(itemAjuste._id, payload);
+      
+      alert(`✅ Stock actualizado exitosamente\n\nStock anterior: ${response.data.cambio.stockAnterior}\nStock nuevo: ${response.data.cambio.stockNuevo}\nDiferencia: ${response.data.cambio.diferencia >= 0 ? '+' : ''}${response.data.cambio.diferencia}`);
+      
+      handleCloseAjusteModal();
+      fetchInventario();
+    } catch (err) {
+      console.error('Error al ajustar stock:', err);
+      alert('❌ Error al ajustar el stock: ' + (err.response?.data?.error || err.message));
     }
   };
 
@@ -282,11 +335,24 @@ const Inventario = () => {
                           )}
                         </td>
                         <td className="text-center">
-                          <h5 className="mb-0">
-                            <Badge bg={item.stockActual === 0 ? 'danger' : 'primary'}>
-                              {item.stockActual}
-                            </Badge>
-                          </h5>
+                          <div className="d-flex align-items-center justify-content-center gap-2">
+                            <h5 className="mb-0">
+                              <Badge bg={item.stockActual === 0 ? 'danger' : 'primary'}>
+                                {item.stockActual}
+                              </Badge>
+                            </h5>
+                            {usuario?.rol === 'admin' && (
+                              <Button
+                                size="sm"
+                                variant="outline-warning"
+                                onClick={() => handleOpenAjusteModal(item)}
+                                title="Ajustar stock"
+                                style={{ fontSize: '0.8rem', padding: '0.25rem 0.5rem' }}
+                              >
+                                ✏️
+                              </Button>
+                            )}
+                          </div>
                         </td>
                         <td className="text-center">
                           {usuario?.rol === 'admin' && editingStockMinimo === item._id ? (
@@ -368,6 +434,129 @@ const Inventario = () => {
           )}
         </Card.Body>
       </Card>
+
+      {/* Modal para Ajustar Stock */}
+      <Modal show={showAjusteModal} onHide={handleCloseAjusteModal} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>
+            📦 Ajustar Stock - {itemAjuste?.nombreVela}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {itemAjuste && (
+            <>
+              <Alert variant="info" className="mb-3">
+                <strong>Stock actual:</strong> {itemAjuste.stockActual} unidades
+              </Alert>
+
+              <Form>
+                <Form.Group className="mb-3">
+                  <Form.Label>Tipo de Ajuste</Form.Label>
+                  <div>
+                    <Form.Check
+                      inline
+                      type="radio"
+                      label="Establecer cantidad exacta"
+                      name="tipoAjuste"
+                      id="absoluto"
+                      checked={ajusteData.tipo === 'absoluto'}
+                      onChange={() => setAjusteData({
+                        ...ajusteData,
+                        tipo: 'absoluto',
+                        valor: itemAjuste.stockActual
+                      })}
+                    />
+                    <Form.Check
+                      inline
+                      type="radio"
+                      label="Sumar o restar unidades"
+                      name="tipoAjuste"
+                      id="relativo"
+                      checked={ajusteData.tipo === 'relativo'}
+                      onChange={() => setAjusteData({
+                        ...ajusteData,
+                        tipo: 'relativo',
+                        valor: 0
+                      })}
+                    />
+                  </div>
+                </Form.Group>
+
+                <Form.Group className="mb-3">
+                  <Form.Label>
+                    {ajusteData.tipo === 'absoluto' ? 'Nueva cantidad' : 'Cantidad a ajustar'}
+                  </Form.Label>
+                  <Form.Control
+                    type="number"
+                    value={ajusteData.valor}
+                    onChange={(e) => setAjusteData({
+                      ...ajusteData,
+                      valor: e.target.value
+                    })}
+                    placeholder={ajusteData.tipo === 'absoluto' ? 'Ej: 10' : 'Ej: -5 (para restar) o +3 (para sumar)'}
+                  />
+                  {ajusteData.tipo === 'relativo' && (
+                    <Form.Text className="text-muted">
+                      Usa números negativos para restar (-5) y positivos para sumar (+3)
+                    </Form.Text>
+                  )}
+                </Form.Group>
+
+                <Form.Group className="mb-3">
+                  <Form.Label>Motivo del ajuste (opcional)</Form.Label>
+                  <Form.Control
+                    as="textarea"
+                    rows={2}
+                    value={ajusteData.motivo}
+                    onChange={(e) => setAjusteData({
+                      ...ajusteData,
+                      motivo: e.target.value
+                    })}
+                    placeholder="Ej: Merma por daño, corrección de inventario, etc."
+                  />
+                </Form.Group>
+
+                {ajusteData.tipo === 'absoluto' && (
+                  <Alert variant={parseInt(ajusteData.valor) < itemAjuste.stockActual ? 'warning' : 'success'}>
+                    <strong>Resultado:</strong> {parseInt(ajusteData.valor) || 0} unidades
+                    <br />
+                    <strong>Diferencia:</strong>{' '}
+                    {(parseInt(ajusteData.valor) || 0) - itemAjuste.stockActual >= 0 ? '+' : ''}
+                    {(parseInt(ajusteData.valor) || 0) - itemAjuste.stockActual} unidades
+                  </Alert>
+                )}
+
+                {ajusteData.tipo === 'relativo' && (
+                  <Alert variant={parseInt(ajusteData.valor) < 0 ? 'warning' : 'success'}>
+                    <strong>Stock resultante:</strong>{' '}
+                    {itemAjuste.stockActual + (parseInt(ajusteData.valor) || 0)} unidades
+                    {itemAjuste.stockActual + (parseInt(ajusteData.valor) || 0) < 0 && (
+                      <div className="text-danger mt-2">
+                        ⚠️ El ajuste resultaría en stock negativo. No se puede aplicar.
+                      </div>
+                    )}
+                  </Alert>
+                )}
+              </Form>
+            </>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleCloseAjusteModal}>
+            Cancelar
+          </Button>
+          <Button 
+            variant="primary" 
+            onClick={handleAjustarStock}
+            disabled={
+              !ajusteData.valor ||
+              (ajusteData.tipo === 'relativo' && itemAjuste && (itemAjuste.stockActual + parseInt(ajusteData.valor || 0) < 0))
+            }
+          >
+            💾 Guardar Ajuste
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </Container>
   );
 };
