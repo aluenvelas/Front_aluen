@@ -126,6 +126,7 @@ export const inventarioAPI = {
   getAll: (params = {}) => api.get('/inventario', { params }),
   getById: (id) => api.get(`/inventario/${id}`),
   update: (id, data) => api.put(`/inventario/${id}`, data),
+  delete: (id) => api.delete(`/inventario/${id}`),
   getBajoStock: () => api.get('/inventario/alerta/bajo-stock'),
 };
 

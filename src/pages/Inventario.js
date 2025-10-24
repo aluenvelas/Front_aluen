@@ -18,6 +18,8 @@ const Inventario = () => {
     valor: 0,
     motivo: ''
   });
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [itemAEliminar, setItemAEliminar] = useState(null);
 
   useEffect(() => {
     fetchInventario();
@@ -92,6 +94,35 @@ const Inventario = () => {
       console.error('Error al ajustar stock:', err);
       alert('❌ Error al ajustar el stock: ' + (err.response?.data?.error || err.message));
     }
+  };
+
+  const handleOpenDeleteModal = (item) => {
+    if (item.stockActual > 0) {
+      alert('⚠️ No se puede eliminar un producto con stock disponible.\n\nPrimero ajusta el stock a 0.');
+      return;
+    }
+    setItemAEliminar(item);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!itemAEliminar) return;
+
+    try {
+      const response = await inventarioAPI.delete(itemAEliminar._id);
+      alert(`✅ ${response.data.mensaje}\n\nProducto: ${response.data.nombreVela}\nCódigo: ${response.data.codigo}`);
+      setShowDeleteModal(false);
+      setItemAEliminar(null);
+      fetchInventario();
+    } catch (err) {
+      console.error('Error al eliminar:', err);
+      alert('❌ Error: ' + (err.response?.data?.error || err.message));
+    }
+  };
+
+  const handleCloseDeleteModal = () => {
+    setShowDeleteModal(false);
+    setItemAEliminar(null);
   };
 
   const getImageUrl = (item) => {
@@ -352,6 +383,17 @@ const Inventario = () => {
                                 ✏️
                               </Button>
                             )}
+                            {usuario?.rol === 'admin' && item.stockActual === 0 && (
+                              <Button
+                                size="sm"
+                                variant="outline-danger"
+                                onClick={() => handleOpenDeleteModal(item)}
+                                title="Eliminar del inventario"
+                                style={{ fontSize: '0.8rem', padding: '0.25rem 0.5rem' }}
+                              >
+                                🗑️
+                              </Button>
+                            )}
                           </div>
                         </td>
                         <td className="text-center">
@@ -554,6 +596,41 @@ const Inventario = () => {
             }
           >
             💾 Guardar Ajuste
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Modal de Confirmación de Eliminación */}
+      <Modal show={showDeleteModal} onHide={handleCloseDeleteModal} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>⚠️ Confirmar Eliminación</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {itemAEliminar && (
+            <>
+              <Alert variant="warning">
+                <strong>¿Estás seguro que deseas eliminar este producto del inventario?</strong>
+              </Alert>
+              <div className="mb-3">
+                <p><strong>Código:</strong> {itemAEliminar.receta?.codigo || 'N/A'}</p>
+                <p><strong>Nombre:</strong> {itemAEliminar.nombreVela}</p>
+                <p><strong>Stock actual:</strong> {itemAEliminar.stockActual} unidades</p>
+              </div>
+              <Alert variant="info">
+                <small>
+                  ℹ️ Esta acción eliminará el registro del inventario. Si produces esta vela nuevamente, 
+                  se creará un nuevo registro.
+                </small>
+              </Alert>
+            </>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleCloseDeleteModal}>
+            Cancelar
+          </Button>
+          <Button variant="danger" onClick={handleConfirmDelete}>
+            🗑️ Sí, Eliminar
           </Button>
         </Modal.Footer>
       </Modal>
