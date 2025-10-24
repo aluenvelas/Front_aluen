@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { recetasAPI } from '../services/api';
+import { recetasAPI, inventarioAPI } from '../services/api';
 import { Card, Row, Col, Badge, Container } from 'react-bootstrap';
 import RecetaDetalleModal from '../components/RecetaDetalleModal';
 import SearchBar from '../components/SearchBar';
@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext';
 const Dashboard = () => {
   const { usuario } = useAuth();
   const [recetas, setRecetas] = useState([]);
+  const [inventario, setInventario] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedReceta, setSelectedReceta] = useState(null);
@@ -21,8 +22,13 @@ const Dashboard = () => {
   const fetchRecetas = async () => {
     try {
       setLoading(true);
-      const response = await recetasAPI.getAll({ activo: 'true' });
-      setRecetas(response.data);
+      const [recetasRes, inventarioRes] = await Promise.all([
+        recetasAPI.getAll({ activo: 'true' }),
+        inventarioAPI.getAll()
+      ]);
+      setRecetas(recetasRes.data);
+      setInventario(inventarioRes.data);
+      console.log('📦 Dashboard - Inventario cargado:', inventarioRes.data.length, 'items');
     } catch (err) {
       setError('Error al cargar las recetas');
       console.error('Dashboard error:', err);
@@ -75,6 +81,15 @@ const Dashboard = () => {
       return '$0';
     }
     return `$${Number(price).toFixed(0)}`;
+  };
+
+  // Función para obtener el stock de una receta desde el inventario
+  const getStockReceta = (receta) => {
+    const itemInventario = inventario.find(inv => 
+      inv.receta?._id === receta._id || 
+      inv.nombreVela === receta.nombre
+    );
+    return itemInventario ? itemInventario.stockActual : 0;
   };
 
   // Función para filtrar recetas según el término de búsqueda
@@ -235,14 +250,25 @@ const Dashboard = () => {
                   </div>
 
                   <Card.Body className="d-flex flex-column">
-                    {/* Código de la Receta */}
-                    {receta.codigo && (
-                      <div className="mb-2">
+                    {/* Código de la Receta y Stock */}
+                    <div className="mb-2 d-flex gap-2 align-items-center flex-wrap">
+                      {receta.codigo && (
                         <Badge bg="secondary" style={{ fontSize: '0.7rem' }}>
                           {receta.codigo}
                         </Badge>
-                      </div>
-                    )}
+                      )}
+                      {(() => {
+                        const stock = getStockReceta(receta);
+                        return (
+                          <Badge 
+                            bg={stock === 0 ? 'danger' : stock <= 5 ? 'warning' : 'success'}
+                            style={{ fontSize: '0.7rem' }}
+                          >
+                            📦 Stock: {stock}
+                          </Badge>
+                        );
+                      })()}
+                    </div>
 
                     {/* Nombre de la Vela */}
                     <Card.Title style={{ 
