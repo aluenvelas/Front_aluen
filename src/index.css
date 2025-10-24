@@ -184,6 +184,10 @@ code {
   background-color: rgba(184, 134, 11, 0.1);
 }
 
+.table tbody tr:hover td {
+  color: var(--aluen-text-light) !important;
+}
+
 .table tbody td {
   color: var(--aluen-text-dark);
 }
@@ -194,6 +198,15 @@ code {
 
 .table-hover tbody tr:hover {
   background-color: rgba(184, 134, 11, 0.15);
+}
+
+.table-hover tbody tr:hover td {
+  color: var(--aluen-text-light) !important;
+}
+
+.table-hover tbody tr:hover small,
+.table-hover tbody tr:hover .small {
+  color: var(--aluen-gold-light) !important;
 }
 
 /* Forms */
@@ -247,6 +260,18 @@ code {
 .form-select option {
   background-color: var(--aluen-darker);
   color: var(--aluen-text-light);
+}
+
+.form-select option:hover,
+.form-select option:checked,
+.form-select option:focus {
+  background-color: var(--aluen-gold) !important;
+  color: var(--aluen-darker) !important;
+}
+
+.form-select option:disabled {
+  color: var(--aluen-gray-light) !important;
+  background-color: var(--aluen-gray) !important;
 }
 
 /* Fix para inputs de tipo number */
@@ -976,6 +1001,38 @@ small.text-danger, .small.text-danger {
   .modal-xl {
     max-width: 1300px;
   }
+}
+
+/* Hover contrast improvements - Mejoras generales de contraste */
+div[style*="cursor: pointer"]:hover,
+div[role="button"]:hover,
+.clickable:hover {
+  color: var(--aluen-text-light) !important;
+}
+
+div[style*="cursor: pointer"]:hover strong,
+div[role="button"]:hover strong,
+.clickable:hover strong {
+  color: var(--aluen-gold-light) !important;
+}
+
+div[style*="cursor: pointer"]:hover small,
+div[role="button"]:hover small,
+.clickable:hover small {
+  color: var(--aluen-text-light) !important;
+}
+
+/* Dropdown/Search results hover */
+[style*="position: absolute"][style*="z-index: 1000"] > div:hover {
+  color: var(--aluen-text-light) !important;
+}
+
+[style*="position: absolute"][style*="z-index: 1000"] > div:hover strong {
+  color: var(--aluen-gold-light) !important;
+}
+
+[style*="position: absolute"][style*="z-index: 1000"] > div:hover small {
+  color: var(--aluen-gold-light) !important;
 }
 
 /* Print styles */
