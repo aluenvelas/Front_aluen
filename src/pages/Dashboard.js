@@ -185,24 +185,30 @@ const Dashboard = () => {
                 >
                   {/* Imagen del Frasco */}
                   <div style={{ 
-                    height: '200px', 
-                    overflow: 'hidden',
-                    backgroundColor: '#f8f9fa',
+                    height: '250px',
+                    backgroundColor: '#ffffff',
+                    backgroundImage: 'linear-gradient(45deg, #f0f0f0 25%, transparent 25%), linear-gradient(-45deg, #f0f0f0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f0f0f0 75%), linear-gradient(-45deg, transparent 75%, #f0f0f0 75%)',
+                    backgroundSize: '20px 20px',
+                    backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     borderTopLeftRadius: '0.75rem',
                     borderTopRightRadius: '0.75rem',
-                    position: 'relative'
+                    position: 'relative',
+                    padding: '10px'
                   }}>
                     {imageUrl ? (
                       <img 
                         src={imageUrl} 
                         alt={receta.nombre}
                         style={{ 
-                          width: '100%', 
-                          height: '100%', 
-                          objectFit: 'cover'
+                          maxWidth: '100%', 
+                          maxHeight: '100%',
+                          width: 'auto',
+                          height: 'auto',
+                          objectFit: 'contain',
+                          filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))'
                         }}
                         onError={(e) => {
                           if (e && e.target && e.target.src && !e.target.src.startsWith('data:')) {
