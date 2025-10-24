@@ -53,8 +53,27 @@ const Ventas = () => {
       setVentas(ventasRes.data.ventas || ventasRes.data);
       setInventario(inventarioRes.data);
       
-      console.log('📦 Inventario cargado:', inventarioRes.data.length, 'items');
-      console.log('✅ Solo mostrando productos con inventario disponible');
+      console.log('📦 Inventario cargado:', inventarioRes.data.length, 'items totales');
+      
+      // Debug: Mostrar detalles del inventario
+      const itemsConStock = inventarioRes.data.filter(item => item.stockActual > 0);
+      const itemsConReceta = inventarioRes.data.filter(item => item.receta && item.receta._id);
+      const itemsValidos = inventarioRes.data.filter(item => item.receta && item.receta._id && item.stockActual > 0);
+      
+      console.log('📊 Análisis del inventario:');
+      console.log('  - Items con stock > 0:', itemsConStock.length);
+      console.log('  - Items con receta válida:', itemsConReceta.length);
+      console.log('  - Items válidos para venta:', itemsValidos.length);
+      
+      if (itemsValidos.length > 0) {
+        console.log('✅ Productos disponibles para venta:', itemsValidos.map(item => ({
+          nombre: item.nombreVela,
+          codigo: item.receta?.codigo,
+          stock: item.stockActual
+        })));
+      } else {
+        console.warn('⚠️ No hay productos disponibles para venta en el inventario');
+      }
       
       setError('');
     } catch (err) {
@@ -487,10 +506,14 @@ const Ventas = () => {
                   >
                     <option value="">-- Seleccione un producto --</option>
                     {inventario
-                      .filter(item => item.stockActual > 0) // Solo mostrar items con stock
+                      .filter(item => {
+                        // Solo mostrar items con stock Y con receta válida
+                        const tieneStock = item.stockActual > 0;
+                        const tieneReceta = item.receta && item.receta._id;
+                        return tieneStock && tieneReceta;
+                      })
                       .map(item => {
                         const receta = item.receta;
-                        if (!receta) return null;
                         
                         return (
                           <option 
@@ -543,7 +566,8 @@ const Ventas = () => {
                       }}
                     >
                       {inventario.filter(item => {
-                        if (!item.receta || item.stockActual === 0) return false; // Solo items con stock
+                        // Solo items con stock Y con receta válida
+                        if (!item.receta || !item.receta._id || item.stockActual === 0) return false;
                         const term = nuevoItem.searchTerm.toLowerCase();
                         return item.nombreVela.toLowerCase().includes(term) || 
                                (item.receta.codigo && item.receta.codigo.toLowerCase().includes(term));
@@ -553,7 +577,8 @@ const Ventas = () => {
                         </div>
                       ) : (
                         inventario.filter(item => {
-                          if (!item.receta || item.stockActual === 0) return false;
+                          // Solo items con stock Y con receta válida
+                          if (!item.receta || !item.receta._id || item.stockActual === 0) return false;
                           const term = nuevoItem.searchTerm.toLowerCase();
                           return item.nombreVela.toLowerCase().includes(term) || 
                                  (item.receta.codigo && item.receta.codigo.toLowerCase().includes(term));
