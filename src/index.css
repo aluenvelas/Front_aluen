@@ -202,11 +202,33 @@ code {
 
 .table-hover tbody tr:hover td {
   color: var(--aluen-text-light) !important;
+  background-color: rgba(184, 134, 11, 0.1) !important;
 }
 
 .table-hover tbody tr:hover small,
 .table-hover tbody tr:hover .small {
   color: var(--aluen-gold-light) !important;
+}
+
+/* Mejorar visibilidad de textos en hover */
+.table-hover tbody tr:hover td strong {
+  color: var(--aluen-gold) !important;
+}
+
+.table-hover tbody tr:hover td .badge {
+  filter: brightness(1.2);
+}
+
+.table tbody tr:hover td {
+  color: var(--aluen-text-light) !important;
+}
+
+.table tbody tr:hover td strong {
+  color: var(--aluen-gold-light) !important;
+}
+
+.table tbody tr:hover td small {
+  color: rgba(255, 255, 255, 0.9) !important;
 }
 
 /* Forms */
@@ -1007,32 +1029,42 @@ small.text-danger, .small.text-danger {
 div[style*="cursor: pointer"]:hover,
 div[role="button"]:hover,
 .clickable:hover {
-  color: var(--aluen-text-light) !important;
+  color: #ffffff !important;
+  background-color: rgba(184, 134, 11, 0.15) !important;
 }
 
 div[style*="cursor: pointer"]:hover strong,
 div[role="button"]:hover strong,
 .clickable:hover strong {
-  color: var(--aluen-gold-light) !important;
+  color: var(--aluen-gold) !important;
 }
 
 div[style*="cursor: pointer"]:hover small,
 div[role="button"]:hover small,
 .clickable:hover small {
-  color: var(--aluen-text-light) !important;
+  color: rgba(255, 255, 255, 0.95) !important;
 }
 
-/* Dropdown/Search results hover */
+/* Dropdown/Search results hover - Específico para búsqueda de productos en ventas */
 [style*="position: absolute"][style*="z-index: 1000"] > div:hover {
-  color: var(--aluen-text-light) !important;
+  background-color: rgba(184, 134, 11, 0.2) !important;
+  color: #ffffff !important;
 }
 
 [style*="position: absolute"][style*="z-index: 1000"] > div:hover strong {
-  color: var(--aluen-gold-light) !important;
+  color: var(--aluen-gold) !important;
 }
 
 [style*="position: absolute"][style*="z-index: 1000"] > div:hover small {
-  color: var(--aluen-gold-light) !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
+[style*="position: absolute"][style*="z-index: 1000"] > div:hover .text-success {
+  color: #7bc96f !important;
+}
+
+[style*="position: absolute"][style*="z-index: 1000"] > div:hover .text-danger {
+  color: #ff6b6b !important;
 }
 
 /* Print styles */
