@@ -28,9 +28,12 @@ const PuntosVenta = () => {
       const response = await puntosVentaAPI.getAll();
       setPuntosVenta(response.data);
       setError('');
+      console.log('✅ Puntos de venta cargados:', response.data.length);
     } catch (err) {
-      setError('Error al cargar puntos de venta');
-      console.error('Error:', err);
+      const errorMsg = err.response?.data?.error || err.message || 'Error desconocido';
+      setError(`Error al cargar puntos de venta: ${errorMsg}`);
+      console.error('❌ Error al cargar puntos de venta:', err);
+      console.error('📋 Detalles:', err.response?.data);
     } finally {
       setLoading(false);
     }
@@ -96,8 +99,10 @@ const PuntosVenta = () => {
       handleCloseModal();
       cargarPuntosVenta();
     } catch (err) {
-      alert('❌ Error al guardar el punto de venta');
-      console.error('Error:', err);
+      console.error('❌ Error completo:', err);
+      console.error('📋 Detalles del error:', err.response?.data);
+      const errorMsg = err.response?.data?.error || err.response?.data?.message || err.message || 'Error desconocido';
+      alert(`❌ Error al guardar el punto de venta:\n\n${errorMsg}\n\nRevisa la consola (F12) para más detalles.`);
     }
   };
 
